@@ -6,10 +6,10 @@ import pickle as pk
 np.set_printoptions(precision = 5, suppress = True)
 
 # training parameter
-feature_power = 2
+feature_power = 1
 validate_ratio = 0.3
 regular_par = 0
-iter_num = 2000
+iter_num = 1000
 learn_rate = 1
 opt_method = 'ada_grad'
 
@@ -131,6 +131,29 @@ def grad_descend(x_train, y_train ,w_init, iter_num = 1000, learn_r =0.1, optimi
 	return w, regress_error
 
 
+def batch_gradient_descend(x_train, y_train, w_init, batch_size = 100, epoch_num = 100, learn_rate = 0.1):
+	data_num = x_train.shape[0]
+	batch_num = int(data_num/batch_size)
+	w = w_init
+	regress_error = np.empty((epoch_num,1))
+	for epoch_idx in range(epoch_num):
+		# shuffle data
+		shuffle_idx = np.random.permutation(data_num)
+		for batch_idx in range(batch_num):
+			sample_start = batch_idx*batch_size
+			sample_end = min(data_num,(batch_idx+1)*batch_size)
+			sample_idx = shuffle_idx[sample_start:sample_end]
+			x_train_batch = x_train[sample_idx,:]
+			y_train_batch = y_train[sample_idx,:]
+			# gradient descend
+			grad = categorical_gradient(x_train_batch,y_train_batch,w)
+			w = w - learn_rate * grad
+
+		regress_error[epoch_idx,:] = categorical_error(x_train, y_train, w)
+		print(regress_error[epoch_idx,:])
+	return w, regress_error
+
+
 def categorical_predict(x_train,w):
 	f = prob_predict(x_train,w)
 	y_predict = np.zeros((x_train.shape[0],1))
@@ -171,7 +194,7 @@ if __name__=='__main__':
 	# w_init = np.linalg.inv(x_train.T@x_train)@x_train.T@y_train
 	w_init = np.ones((x_train.shape[1],1))
 	w_opt, regress_error = grad_descend(x_train,y_train,w_init,iter_num = iter_num, learn_r = learn_rate, optimizer = opt_method)
-
+	# w_opt, regress_error = batch_gradient_descend(x_train, y_train, w_init, batch_size = 100, epoch_num = 200, learn_rate = 0.1)
 	" Training and Validation error"
 	# predict training set
 	y_predict_trian = categorical_predict(x_train,w_opt)
