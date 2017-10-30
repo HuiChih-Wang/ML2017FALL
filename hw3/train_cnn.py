@@ -21,10 +21,10 @@ train_by_cnn = True
 write_model = True 
 
 # training parameter
-training_num = 10000
+training_num = 28000
 batch_size = 100
-epoch_num = 10
-learn_rate = 1
+epoch_num = 100
+learn_rate = 10
 
 # function code
 def load_image(file_dir, data_num = 'all', print_log = False):
@@ -85,13 +85,14 @@ def validation_split(x_train,y_train,validate_ratio = 0.3):
 
 def build_cnn(input_shape):
 	cnn_model = Sequential()
-	cnn_model.add(Conv2D(32, (5,5), activation = 'relu', padding = 'same', input_shape = input_shape))
-	# cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	# cnn_model.add(Drop)
-	cnn_model.add(Conv2D(16, (3,3), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(64, (5,5), activation = 'relu', padding = 'same', input_shape = input_shape))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(8, (3,3), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same'))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
+	cnn_model.add(Conv2D(16, (1,1), activation = 'relu', padding = 'same'))
+	cnn_model.add(MaxPool2D(pool_size = (2,2)))
+	cnn_model.add(Conv2D(16, (1,1), activation = 'relu', padding = 'same'))
+	cnn_model.add(MaxPool2D(pool_size = (2,2))) 
 	cnn_model.add(Flatten())
 	cnn_model.add(Dense(128, activation = 'relu'))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
