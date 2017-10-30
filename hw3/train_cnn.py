@@ -21,7 +21,7 @@ train_by_cnn = True
 write_model = True 
 
 # training parameter
-training_num = 2
+training_num = 10000
 batch_size = 100
 epoch_num = 10
 learn_rate = 1
@@ -72,6 +72,17 @@ def data_reshape(x_train_list,x_train_shape):
 		print('Invalid input to train deep learing model !\n')
 	return x_train
 
+def validation_split(x_train,y_train,validate_ratio = 0.3):
+	rand_idx = np.random.permutation(x_train.shape[0])
+	val_data_num = int(x_train.shape[0]*validate_ratio)
+	# train_data_num = x_train.shape[0] - val_data_num
+
+	x_val = x_train[rand_idx[:val_data_num]]
+	y_val = y_train[rand_idx[:val_data_num]]
+	x_train = x_train[rand_idx[val_data_num:]]
+	y_train =  y_train[rand_idx[val_data_num:]]
+	return (x_train,y_train), (x_val,y_val)
+
 def build_cnn(input_shape):
 	cnn_model = Sequential()
 	cnn_model.add(Conv2D(32, (5,5), activation = 'relu', padding = 'same', input_shape = input_shape))
@@ -110,15 +121,21 @@ if __name__ == '__main__':
 	if train_by_cnn:
 		x_train_shape = (training_num, row_size,column_size,channel)
 		x_train = data_reshape(x_train_list,x_train_shape)
+		# split validation set
+		(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
+		# build model
 		model = build_cnn(input_shape = x_train_shape[1:])
 	else :
 		x_train_shape = (training_num, row_size*column_size*channel)
 		x_train = data_reshape(x_train_list,x_train_shape)
+		# split validation set
+		(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
+		# build model
 		model = build_dnn(input_shape = x_train_shape[1:])
 
 	# fit model
 	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
-	model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num ,verbose = 1)
+	model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
 
 
 
