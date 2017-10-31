@@ -121,9 +121,11 @@ def build_cnn(input_shape):
 	# cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
 	# cnn_model.add(MaxPool2D(pool_size = (2,2))) 
 	cnn_model.add(Flatten())
-	cnn_model.add(Dense(32, activation = 'relu'))
-	cnn_model.add(Dense(32, activation = 'relu'))
+	cnn_model.add(Dense(100, activation = 'relu'))
 	cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dense(100, activation = 'relu'))
+	cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dense(100, activation = 'relu'))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
 	return cnn_model
 
