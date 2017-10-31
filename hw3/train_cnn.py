@@ -18,14 +18,14 @@ class_num = 7
 print_opt = True
 
 # training options
-train_by_cnn = False
+train_by_cnn = True
 write_model = True 
 
 # training parameter
-training_num = 1000
-batch_size = 100
-epoch_num = 100
-learn_rate = 10
+training_num = 28000
+batch_size = 10
+epoch_num = 50
+learn_rate = 1
 
 # function code
 def load_image(file_dir, data_num = 'all', train_by_cnn = True):
@@ -107,13 +107,13 @@ def validation_split(x_train,y_train,validate_ratio = 0.3):
 def build_cnn(input_shape):
 	cnn_model = Sequential()
 	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same', input_shape = input_shape))
-	model.add(BatchNormalization())
+	cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(16, (3,3), activation = 'relu', padding = 'same'))
-	model.add(BatchNormalization())
+	cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
-	model.add(BatchNormalization())
+	cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	# cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
 	# cnn_model.add(MaxPool2D(pool_size = (2,2))) 
@@ -159,6 +159,7 @@ if __name__ == '__main__':
 
 	# build traing model 
 	y_train_weight = sample_weight(y_train)
+	y_train_weight = None
 	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
 
 
