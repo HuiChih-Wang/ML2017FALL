@@ -162,6 +162,11 @@ if __name__ == '__main__':
 	y_train_weight = None
 	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
 
+	# save model in h5py
+	if write_model:
+		model.save('traing_cnn.h5') 
+
+
 
 
 
