@@ -17,17 +17,17 @@ class_num = 7
 print_opt = True
 
 # training options
-train_by_cnn = True
+train_by_cnn = False
 write_model = True 
 
 # training parameter
-training_num = 28000
+training_num = 1000
 batch_size = 100
 epoch_num = 100
 learn_rate = 10
 
 # function code
-def load_image(file_dir, data_num = 'all', print_log = False):
+def load_image(file_dir, data_num = 'all', train_by_cnn = True):
 	if data_num == 'all':
 		train_file = pd.read_csv(file_dir)
 		data_num = train_file.shape[0]
@@ -37,17 +37,26 @@ def load_image(file_dir, data_num = 'all', print_log = False):
 	y_train = train_file['label'].as_matrix()
 	x_train_list = train_file['feature'].tolist()
 
+	# split data to np array
 	class_statistic = np.zeros((class_num,))
-	x_train = np.empty((data_num,row_size,column_size,channel))
 	for data_idx in range(data_num):
 		train_data = x_train_list[data_idx]
 		data = np.array(train_data.split(), dtype = np.float32)/255
 		x_train_list[data_idx] = data
 		class_statistic[y_train[data_idx]]+=1
 
+	# reshape data
+	if train_by_cnn:
+		x_train_shape = (data_num,row_size,column_size,channel)
+	else:
+		x_train_shape = (data_num,row_size*column_size*channel)
+	x_train = data_reshape(x_train_list, x_train_shape)
+		
+	# convert y_train to categorical
+	y_train = to_categorical(y_train)
 	# print log 
-	if print_log:
-		print('Training with %d images...\n' %x_train.shape[0])
+	if print_opt:
+		print('Training with %d images...\n' %y_train.shape[0])
 		print('Class 0 (Angry) : %d \n' % class_statistic[0])
 		print('Class 1 (Disgust) : %d \n' % class_statistic[1])
 		print('Class 2 (Fear) : %d \n' % class_statistic[2])
@@ -55,7 +64,7 @@ def load_image(file_dir, data_num = 'all', print_log = False):
 		print('Class 4 (Sad) : %d \n' % class_statistic[4])
 		print('Class 5 (Surprise) : %d \n' % class_statistic[5])
 		print('Class 6 (Neutral) : %d \n' % class_statistic[6])
-	return x_train_list, y_train
+	return x_train, y_train
 
 
 def data_reshape(x_train_list,x_train_shape):
@@ -72,6 +81,19 @@ def data_reshape(x_train_list,x_train_shape):
 		print('Invalid input to train deep learing model !\n')
 	return x_train
 
+def sample_weight(y_train):
+	y_train = np.argmax(y_train,axis = 1)
+	class_statistic = np.zeros((class_num,))
+	for i in range(y_train.shape[0]):
+		class_statistic[y_train[i]]+=1
+	class_weight = 1/class_statistic
+	class_weight = class_weight/np.sum(class_weight)
+	y_train_weight = np.empty(y_train.shape)
+	for i in range(y_train.shape[0]):
+		y_train_weight[i] = class_weight[y_train[i]]
+	return y_train_weight
+
+
 def validation_split(x_train,y_train,validate_ratio = 0.3):
 	rand_idx = np.random.permutation(x_train.shape[0])
 	val_data_num = int(x_train.shape[0]*validate_ratio)
@@ -85,13 +107,13 @@ def validation_split(x_train,y_train,validate_ratio = 0.3):
 
 def build_cnn(input_shape):
 	cnn_model = Sequential()
-	cnn_model.add(Conv2D(64, (5,5), activation = 'relu', padding = 'same', input_shape = input_shape))
+	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same', input_shape = input_shape))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(16, (3,3), activation = 'relu', padding = 'same'))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(16, (1,1), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(16, (1,1), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
 	cnn_model.add(MaxPool2D(pool_size = (2,2))) 
 	cnn_model.add(Flatten())
 	cnn_model.add(Dense(128, activation = 'relu'))
@@ -108,35 +130,33 @@ def build_dnn(input_shape):
 	dnn_model.summary()
 	return dnn_model
 
-def trianing_model():
-	0
+def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_by_cnn = True):
+	# build model
+	if train_by_cnn:
+		model = build_cnn(input_shape = x_train.shape[1:])
+	else :
+		model = build_dnn(input_shape = x_train.shape[1:])
+
+	# fit model
+	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
+	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
+
+	return model
 
 if __name__ == '__main__':
 	#  load image data
 	file_dir = 'data/train.csv'
-	x_train_list, y_train = load_image(file_dir, data_num = training_num, print_log = print_opt)
-	y_train = to_categorical(y_train, class_num)
+	x_train, y_train = load_image(file_dir, data_num = training_num, train_by_cnn = train_by_cnn)
 	training_num = y_train.shape[0]
 
-	# build traing model 
-	if train_by_cnn:
-		x_train_shape = (training_num, row_size,column_size,channel)
-		x_train = data_reshape(x_train_list,x_train_shape)
-		# split validation set
-		(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
-		# build model
-		model = build_cnn(input_shape = x_train_shape[1:])
-	else :
-		x_train_shape = (training_num, row_size*column_size*channel)
-		x_train = data_reshape(x_train_list,x_train_shape)
-		# split validation set
-		(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
-		# build model
-		model = build_dnn(input_shape = x_train_shape[1:])
+	# validation split
+	(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
 
-	# fit model
-	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
-	model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
+	# build traing model 
+	y_train_weight = sample_weight(y_train)
+	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
+
+
 
 
 
