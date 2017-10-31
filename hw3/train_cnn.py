@@ -4,6 +4,7 @@ import pandas as pd
 from keras.models import Sequential
 from keras.utils import to_categorical
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
+from keras.layers.normalization import BatchNormalization 
 from keras.losses import categorical_crossentropy
 from keras.optimizers import Adadelta
 
@@ -97,8 +98,6 @@ def sample_weight(y_train):
 def validation_split(x_train,y_train,validate_ratio = 0.3):
 	rand_idx = np.random.permutation(x_train.shape[0])
 	val_data_num = int(x_train.shape[0]*validate_ratio)
-	# train_data_num = x_train.shape[0] - val_data_num
-
 	x_val = x_train[rand_idx[:val_data_num]]
 	y_val = y_train[rand_idx[:val_data_num]]
 	x_train = x_train[rand_idx[val_data_num:]]
@@ -108,15 +107,19 @@ def validation_split(x_train,y_train,validate_ratio = 0.3):
 def build_cnn(input_shape):
 	cnn_model = Sequential()
 	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same', input_shape = input_shape))
+	model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(16, (3,3), activation = 'relu', padding = 'same'))
+	model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
+	model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
-	cnn_model.add(MaxPool2D(pool_size = (2,2))) 
+	# cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
+	# cnn_model.add(MaxPool2D(pool_size = (2,2))) 
 	cnn_model.add(Flatten())
-	cnn_model.add(Dense(128, activation = 'relu'))
+	cnn_model.add(Dense(32, activation = 'relu'))
+	cnn_model.add(Dense(32, activation = 'relu'))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
 	return cnn_model
 
@@ -138,7 +141,7 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 	# print model summary
 	if print_opt:
 		model.summary()
-		
+
 	# fit model
 	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
 	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
