@@ -118,7 +118,6 @@ def build_cnn(input_shape):
 	cnn_model.add(Flatten())
 	cnn_model.add(Dense(128, activation = 'relu'))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
-	cnn_model.summary()
 	return cnn_model
 
 def build_dnn(input_shape):
@@ -127,7 +126,6 @@ def build_dnn(input_shape):
 	dnn_model.add(Dense(200, activation ='relu'))
 	dnn_model.add(Dense(128, activation = 'relu'))
 	dnn_model.add(Dense(class_num, activation='softmax'))
-	dnn_model.summary()
 	return dnn_model
 
 def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_by_cnn = True):
@@ -137,6 +135,10 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 	else :
 		model = build_dnn(input_shape = x_train.shape[1:])
 
+	# print model summary
+	if print_opt:
+		model.summary()
+		
 	# fit model
 	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
 	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
