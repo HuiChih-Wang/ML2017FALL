@@ -149,8 +149,17 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 	# fit model
 	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
 	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
-
 	return model
+
+def get_confusion_matrix(x_val, y_val, model):
+	y_val_predict = model.predict_classes(x_val)
+	y_val = np.argmax(y_val,axis = 1)
+	confusion_mat = np.zeros((class_num, class_num))
+	for i in range(y_val.shape[0]):
+		confusion_mat[y_val[i],y_val_predict[i]]+=1
+	return confusion_mat/y_val.shape[0]
+
+
 
 if __name__ == '__main__':
 	#  load image data
