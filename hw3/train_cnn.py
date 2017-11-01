@@ -1,6 +1,7 @@
 # imported module
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.utils import to_categorical
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
@@ -10,21 +11,23 @@ from keras.optimizers import Adadelta
 
 
 # global parameter
+class_list = ['Angry','Disgust','Fear','Happy','Sad','Surprise','Neutral']
 row_size = 48
 column_size = 48
 channel = 1
 
 class_num = 7
 print_opt = True
+plot_opt = True
 
 # training options
-train_by_cnn = True
+train_by_cnn = False
 write_model = True 
 
 # training parameter
-training_num = 28000
+training_num = 10000
 batch_size = 10
-epoch_num = 50
+epoch_num = 10
 learn_rate = 10
 
 # function code
@@ -58,13 +61,8 @@ def load_image(file_dir, data_num = 'all', train_by_cnn = True):
 	# print log 
 	if print_opt:
 		print('Training with %d images...\n' %y_train.shape[0])
-		print('Class 0 (Angry) : %d \n' % class_statistic[0])
-		print('Class 1 (Disgust) : %d \n' % class_statistic[1])
-		print('Class 2 (Fear) : %d \n' % class_statistic[2])
-		print('Class 3 (Happy) : %d \n' % class_statistic[3])
-		print('Class 4 (Sad) : %d \n' % class_statistic[4])
-		print('Class 5 (Surprise) : %d \n' % class_statistic[5])
-		print('Class 6 (Neutral) : %d \n' % class_statistic[6])
+		for i in range(len(class_list)):
+			print('Class %d (%s) : %d \n' %(i, class_list[i], class_statistic[i]))
 	return x_train, y_train
 
 
@@ -154,13 +152,24 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
 	return model
 
-def get_confusion_matrix(x_val, y_val, model):
-	y_val_predict = model.predict_classes(x_val)
-	y_val = np.argmax(y_val,axis = 1)
+def get_confusion_matrix(y_val_predict, y_val):
 	confusion_mat = np.zeros((class_num, class_num))
 	for i in range(y_val.shape[0]):
+		print(y_val_predict[i])
 		confusion_mat[y_val[i],y_val_predict[i]]+=1
-	return confusion_mat/y_val.shape[0]
+	confusion_mat/=y_val.shape[0]
+	return confusion_mat
+
+def plot_confusion_mat(confusion_mat):
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	cax = ax.matshow(confusion_mat, interpolation='nearest')
+	fig.colorbar(cax)
+	ax.set_xticklabels(['']+class_list)
+	ax.set_yticklabels(['']+class_list)
+	plt.show()
+
+
 
 
 
@@ -177,6 +186,14 @@ if __name__ == '__main__':
 	y_train_weight = sample_weight(y_train)
 	y_train_weight = None
 	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
+
+	if print_opt: # some problem
+		y_val_predict = model.predict_classes(x_val) 
+		cm = get_confusion_matrix(y_val,y_val)
+		print(cm)
+		plot_confusion_mat(cm)
+
+
 
 	# save model in h5py
 	if write_model:
