@@ -103,7 +103,7 @@ def plot_confusion_mat(confusion_mat):
 
 def write_simulation_text():
 	simulate_text_file = model_path + 'simulate_text.txt'
-	with open(simulate_text,'w') as file:
+	with open(simulate_text_file,'w') as file:
 		file.write("Extract data number: %d\n" %training_num)
 		file.write("Validation ratio : %f\n" %validation_ratio)
 		file.write("Training model : %s\n" %train_opt)
