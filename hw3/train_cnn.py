@@ -7,7 +7,7 @@ from keras.utils import to_categorical
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
 from keras.layers.normalization import BatchNormalization 
 from keras.losses import categorical_crossentropy
-from keras.optimizers import Adadelta
+from keras.optimizers import Adadelta,Adam,SGD
 
 
 # global parameter
@@ -18,17 +18,18 @@ channel = 1
 
 class_num = 7
 print_opt = True
-plot_opt = True
+plot_opt = False
 
 # training options
-train_by_cnn = False
-write_model = True 
+train_by_cnn = True
+write_model = True
 
 # training parameter
-training_num = 10000
+activate_method = 'relu'
+training_num = 28000
 batch_size = 10
-epoch_num = 10
-learn_rate = 10
+epoch_num = 100
+opt_method = Adam(lr = 0.1)
 
 # function code
 def load_image(file_dir, data_num = 'all', train_by_cnn = True):
@@ -104,27 +105,27 @@ def validation_split(x_train,y_train,validate_ratio = 0.3):
 
 def build_cnn(input_shape):
 	cnn_model = Sequential()
-	cnn_model.add(Conv2D(32, (3,3), activation = 'relu', padding = 'same', input_shape = input_shape))
+	cnn_model.add(Conv2D(32, (3,3), activation = activate_method, padding = 'same', input_shape = input_shape))
 	cnn_model.add(BatchNormalization())
-	cnn_model.add(Dropout(0.25))
+	# cnn_model.add(Dropout(0.25))
 	#cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(64, (3,3), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(64, (3,3), activation = activate_method, padding = 'same'))
 	cnn_model.add(BatchNormalization())
-	cnn_model.add(Dropout(0.25))
+	# cnn_model.add(Dropout(0.25))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	cnn_model.add(Conv2D(128, (1,1), activation = 'relu', padding = 'same'))
+	cnn_model.add(Conv2D(128, (3,3), activation = activate_method, padding = 'same'))
 	cnn_model.add(BatchNormalization())
-	cnn_model.add(Dropout(0.25))
+	# cnn_model.add(Dropout(0.25))
 	#cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	# cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
 	# cnn_model.add(MaxPool2D(pool_size = (2,2))) 
 	cnn_model.add(Flatten())
 	cnn_model.add(Dense(1000, activation = 'relu'))
-	cnn_model.add(Dropout(0.5))
+	cnn_model.add(Dropout(0.25))
 	cnn_model.add(Dense(1000, activation = 'relu'))
-	cnn_model.add(Dropout(0.5))
+	cnn_model.add(Dropout(0.25))
 	cnn_model.add(Dense(1000, activation = 'relu'))
-	cnn_model.add(Dropout(0.5))
+	cnn_model.add(Dropout(0.25))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
 	return cnn_model
 
@@ -148,16 +149,16 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 		model.summary()
 
 	# fit model
-	model.compile(loss = categorical_crossentropy, optimizer = Adadelta(lr = learn_rate), metrics = ['accuracy'])
-	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = 1)
+	model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
+	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
 	return model
 
 def get_confusion_matrix(y_val_predict, y_val):
 	confusion_mat = np.zeros((class_num, class_num))
 	for i in range(y_val.shape[0]):
-		print(y_val_predict[i])
 		confusion_mat[y_val[i],y_val_predict[i]]+=1
-	confusion_mat/=y_val.shape[0]
+	for i in range(class_num):
+		confusion_mat[i,:]/=np.sum(confusion_mat[i,:])
 	return confusion_mat
 
 def plot_confusion_mat(confusion_mat):
@@ -167,10 +168,10 @@ def plot_confusion_mat(confusion_mat):
 	fig.colorbar(cax)
 	ax.set_xticklabels(['']+class_list)
 	ax.set_yticklabels(['']+class_list)
+
+	for (i,j),z in np.ndenumerate(confusion_mat):
+		ax.text(j,i, '{:0.2f}'.format(z),ha='center',va='center')
 	plt.show()
-
-
-
 
 
 if __name__ == '__main__':
@@ -187,9 +188,11 @@ if __name__ == '__main__':
 	y_train_weight = None
 	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
 
-	if print_opt: # some problem
+	# plot confusion matrix
+	if print_opt: 
+		y_val_class = np.argmax(y_val, axis = 1)
 		y_val_predict = model.predict_classes(x_val) 
-		cm = get_confusion_matrix(y_val,y_val)
+		cm = get_confusion_matrix(y_val_class,y_val_class)
 		print(cm)
 		plot_confusion_mat(cm)
 
