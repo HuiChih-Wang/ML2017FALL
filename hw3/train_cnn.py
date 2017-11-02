@@ -23,14 +23,15 @@ plot_opt = False
 
 # data path
 train_data_path = 'data/train.csv'
-model_path = 'traing_cnn.h5'
+model_path = 'cnn_model.h5'
 
 # training parameter
 train_opt = 'cnn'
+model_load = True
 activate_method = 'relu'
-training_num = 1000
+training_num = 'all'
 batch_size = 10
-epoch_num = 1
+epoch_num = 40
 opt_method = Adadelta(lr = 1)
 
 # function code
@@ -138,26 +139,31 @@ def build_dnn(input_shape):
 	dnn_model.add(Dense(class_num, activation='softmax'))
 	return dnn_model
 
-def trianing_model(x_train, y_train, x_val, y_val, train_opt = 'cnn'):
+def trianing_model(x_train, y_train, x_val, y_val, train_opt = 'cnn',model_load = False):
 	# build model
-	if train_opt =='load':
+	if model_load:
+		print('Load %s model from path: %s\n' %(train_opt,model_path))
 		model = load_model(model_path)
-	elif train_opt == 'cnn' or train_opt == 'dnn':
+	else:
+		print('Traing %s model with %d traing data and %d validation data' %(train_opt, x_train.shape[0],x_val.shape[0]))
 		if train_opt == 'cnn':
 			model = build_cnn(input_shape = x_train.shape[1:])
-		elif train_opt == 'dnn' :
+		elif train_opt == 'dnn': 
 			model = build_dnn(input_shape = x_train.shape[1:])
+		else:
+			print("Error!Default model option:'cnn','dnn'\n")
+			sys.exit()
 		# print model summary
 		if print_opt:
 			model.summary()
 		# fit model
 		model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
 		model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
+		# save out model
+		print('Save %s  model to path:%s\n' %(train_opt,model_path))
 		model.save(model_path)
-	else:
-		print("Default option is 'cnn','dnn', and 'load' ")
-		sys.exit()
 	return model
+
 def get_accuracy(y_true,y_predict):
 	return np.mean(y_true==y_predict)
 
@@ -199,11 +205,11 @@ if __name__ == '__main__':
 	"Build training model" 
 	# y_train_weight = sample_weight(y_train)
 	# y_train_weight = None
-	model = trianing_model(x_train, y_train, x_val, y_val,train_opt)
+	model = trianing_model(x_train, y_train, x_val, y_val,train_opt = train_opt,model_load = model_load)
 
 
 	"Evaluate accuracy"
-	y_val_predic = model.predict_classes(x_val)
+	y_val_predict = model.predict_classes(x_val)
 	y_train_predict = model.predict_classes(x_train)
 	train_acc = get_accuracy(y_true = y_train_class, y_predict = y_train_predict)
 	val_acc = get_accuracy(y_true = y_val_class, y_predict = y_val_predict)
@@ -211,12 +217,12 @@ if __name__ == '__main__':
 
 	if print_opt: 
 		print("\n\nAccuracy Evaluation")
-		print("Training accuracy: %4f" %train_acc)
-		print("Validation accuracy: %4f" %val_acc)
+		print("Training accuracy: %4f\n" %train_acc)
+		print("Validation accuracy: %4f\n" %val_acc)
 
 	"Confusion matrix"
-	if print_opt:  
-		cm = get_confusion_matrix(y_true = y_val_class,y_predict = y_val_predic)
+	if plot_opt:  
+		cm = get_confusion_matrix(y_true = y_val_class,y_predict = y_val_predict)
 		plot_confusion_mat(cm)
 
 
