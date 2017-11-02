@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from keras.models import Sequential,load_model
 from keras.utils import to_categorical
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
@@ -34,7 +34,7 @@ epoch_num = 1
 opt_method = Adadelta(lr = 1)
 
 # function code
-def load_image(file_dir, data_num = 'all', train_by_cnn = True):
+def load_image(file_dir, data_num = 'all', train_opt = 'cnn'):
 	if data_num == 'all':
 		train_file = pd.read_csv(file_dir)
 		data_num = train_file.shape[0]
@@ -53,9 +53,9 @@ def load_image(file_dir, data_num = 'all', train_by_cnn = True):
 		class_statistic[y_train[data_idx]]+=1
 
 	# reshape data
-	if train_by_cnn:
+	if train_opt == 'cnn':
 		x_train_shape = (data_num,row_size,column_size,channel)
-	else:
+	elif train_opt == 'dnn':
 		x_train_shape = (data_num,row_size*column_size*channel)
 	x_train = data_reshape(x_train_list, x_train_shape)
 		
@@ -138,7 +138,7 @@ def build_dnn(input_shape):
 	dnn_model.add(Dense(class_num, activation='softmax'))
 	return dnn_model
 
-def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_by_cnn = True):
+def trianing_model(x_train, y_train, x_val, y_val, train_opt = 'cnn'):
 	# build model
 	if train_opt =='load':
 		model = load_model(model_path)
@@ -152,7 +152,7 @@ def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_
 			model.summary()
 		# fit model
 		model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
-		model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
+		model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
 		model.save(model_path)
 	else:
 		print("Default option is 'cnn','dnn', and 'load' ")
@@ -185,7 +185,7 @@ def plot_confusion_mat(confusion_mat):
 if __name__ == '__main__':
 	"Load image data"
 	file_dir = train_data_path
-	x_train, y_train = load_image(file_dir, data_num = training_num, train_by_cnn = train_by_cnn)
+	x_train, y_train = load_image(file_dir, data_num = training_num, train_opt = train_opt)
 	training_num = y_train.shape[0]
 
 	# validation split
@@ -199,7 +199,7 @@ if __name__ == '__main__':
 	"Build training model" 
 	# y_train_weight = sample_weight(y_train)
 	# y_train_weight = None
-	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_opt)
+	model = trianing_model(x_train, y_train, x_val, y_val,train_opt)
 
 
 	"Evaluate accuracy"
@@ -211,8 +211,8 @@ if __name__ == '__main__':
 
 	if print_opt: 
 		print("\n\nAccuracy Evaluation")
-		print("Training accuracy: %4f", %train_acc)
-		print("Validation accuracy: %4f", %val_acc)
+		print("Training accuracy: %4f" %train_acc)
+		print("Validation accuracy: %4f" %val_acc)
 
 	"Confusion matrix"
 	if print_opt:  
