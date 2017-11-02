@@ -62,9 +62,15 @@ def sample_weight(y_train):
 	return y_train_weight
 
 
-def validation_split(x_train,y_train,validate_ratio = 0.3):
-	rand_idx = np.random.permutation(x_train.shape[0])
-	val_data_num = int(x_train.shape[0]*validate_ratio)
+def validation_split(x_train,y_train):
+	val_idx_file = model_path+'ValSplitIdx'
+	if model_load:
+		rand_idx = np.load(val_idx_file)
+	else:
+		rand_idx = np.random.permutation(training_num)
+		np.save(val_idx_file,rand_idx)
+
+	val_data_num = int(training_num*validation_ratio)
 	x_val = x_train[rand_idx[:val_data_num]]
 	y_val = y_train[rand_idx[:val_data_num]]
 	x_train = x_train[rand_idx[val_data_num:]]
@@ -94,3 +100,12 @@ def plot_confusion_mat(confusion_mat):
 	for (i,j),z in np.ndenumerate(confusion_mat):
 		ax.text(j,i, '{:0.2f}'.format(z),ha='center',va='center')
 	plt.show()
+
+def write_simulation_text():
+	simulate_text_file = model_path + 'simulate_text.txt'
+	with open(simulate_text,'w') as file:
+		file.write("Extract data number: %d\n" %training_num)
+		file.write("Validation ratio : %f\n" %validation_ratio)
+		file.write("Training model : %s\n" %train_opt)
+		file.write("Batch size : %d\n" %batch_size)
+		file.write("Epoch number : %d\n" %epoch_num)

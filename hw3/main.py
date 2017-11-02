@@ -1,5 +1,5 @@
 import numpy as np
-from training_parameter import*
+from training_parameter import *
 from training_model import train_model
 from training_utils import *
 
@@ -40,3 +40,6 @@ if __name__ == '__main__':
 	if plot_opt:  
 		cm = get_confusion_matrix(y_true = y_val_class,y_predict = y_val_predict)
 		plot_confusion_mat(cm)
+
+	"Write simulation parameter"
+	write_simulation_text()

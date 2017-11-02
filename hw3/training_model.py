@@ -43,9 +43,10 @@ def build_dnn(input_shape):
 
 def train_model(x_train, y_train, x_val, y_val):
 	# build model
+	model_name = model_path + train_opt +'_model.h5'
 	if model_load:
-		print('Load %s model from path: %s\n' %(train_opt,model_path))
-		model = load_model(model_path)
+		print('Load %s model from path: %s\n' %(train_opt,model_name))
+		model = load_model(model_name)
 	else:
 		print('Traing %s model with %d traing data and %d validation data' %(train_opt, x_train.shape[0],x_val.shape[0]))
 		if train_opt == 'cnn':
@@ -62,6 +63,6 @@ def train_model(x_train, y_train, x_val, y_val):
 		model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
 		model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
 		# save out model
-		print('Save %s  model to path:%s\n' %(train_opt,model_path))
-		model.save(model_path)
+		print('Save %s  model to path:%s\n' %(train_opt,model_name))
+		model.save(model_name)
 	return model
