@@ -1,8 +1,9 @@
 # imported module
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from keras.models import Sequential
+from keras.models import Sequential,load_model
 from keras.utils import to_categorical
 from keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Dropout
 from keras.layers.normalization import BatchNormalization 
@@ -20,16 +21,17 @@ class_num = 7
 print_opt = True
 plot_opt = False
 
-# training options
-train_by_cnn = True
-write_model = True
+# data path
+train_data_path = 'data/train.csv'
+model_path = 'traing_cnn.h5'
 
 # training parameter
+train_opt = 'cnn'
 activate_method = 'relu'
-training_num = 28000
+training_num = 1000
 batch_size = 10
-epoch_num = 100
-opt_method = Adam(lr = 0.1)
+epoch_num = 1
+opt_method = Adadelta(lr = 1)
 
 # function code
 def load_image(file_dir, data_num = 'all', train_by_cnn = True):
@@ -107,24 +109,23 @@ def build_cnn(input_shape):
 	cnn_model = Sequential()
 	cnn_model.add(Conv2D(32, (3,3), activation = activate_method, padding = 'same', input_shape = input_shape))
 	cnn_model.add(BatchNormalization())
+	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	# cnn_model.add(Dropout(0.25))
-	#cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(64, (3,3), activation = activate_method, padding = 'same'))
 	cnn_model.add(BatchNormalization())
-	# cnn_model.add(Dropout(0.25))
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	cnn_model.add(Conv2D(128, (3,3), activation = activate_method, padding = 'same'))
 	cnn_model.add(BatchNormalization())
+	cnn_model.add(MaxPool2D(pool_size = (2,2)))
 	# cnn_model.add(Dropout(0.25))
-	#cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	# cnn_model.add(Conv2D(8, (1,1), activation = 'relu', padding = 'same'))
-	# cnn_model.add(MaxPool2D(pool_size = (2,2))) 
+
+	# flatten dense layer
 	cnn_model.add(Flatten())
-	cnn_model.add(Dense(1000, activation = 'relu'))
+	cnn_model.add(Dense(256, activation = 'relu'))
 	cnn_model.add(Dropout(0.25))
-	cnn_model.add(Dense(1000, activation = 'relu'))
+	cnn_model.add(Dense(256, activation = 'relu'))
 	cnn_model.add(Dropout(0.25))
-	cnn_model.add(Dense(1000, activation = 'relu'))
+	cnn_model.add(Dense(256, activation = 'relu'))
 	cnn_model.add(Dropout(0.25))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
 	return cnn_model
@@ -139,24 +140,31 @@ def build_dnn(input_shape):
 
 def trianing_model(x_train, y_train, x_val, y_val, y_train_weight = None, train_by_cnn = True):
 	# build model
-	if train_by_cnn:
-		model = build_cnn(input_shape = x_train.shape[1:])
-	else :
-		model = build_dnn(input_shape = x_train.shape[1:])
-
-	# print model summary
-	if print_opt:
-		model.summary()
-
-	# fit model
-	model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
-	model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
+	if train_opt =='load':
+		model = load_model(model_path)
+	elif train_opt == 'cnn' or train_opt == 'dnn':
+		if train_opt == 'cnn':
+			model = build_cnn(input_shape = x_train.shape[1:])
+		elif train_opt == 'dnn' :
+			model = build_dnn(input_shape = x_train.shape[1:])
+		# print model summary
+		if print_opt:
+			model.summary()
+		# fit model
+		model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
+		model.fit(x_train, y_train, sample_weight = y_train_weight, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
+		model.save(model_path)
+	else:
+		print("Default option is 'cnn','dnn', and 'load' ")
+		sys.exit()
 	return model
+def get_accuracy(y_true,y_predict):
+	return np.mean(y_true==y_predict)
 
-def get_confusion_matrix(y_val_predict, y_val):
+def get_confusion_matrix(y_true, y_predict):
 	confusion_mat = np.zeros((class_num, class_num))
-	for i in range(y_val.shape[0]):
-		confusion_mat[y_val[i],y_val_predict[i]]+=1
+	for i in range(y_true.shape[0]):
+		confusion_mat[y_true[i],y_predict[i]]+=1
 	for i in range(class_num):
 		confusion_mat[i,:]/=np.sum(confusion_mat[i,:])
 	return confusion_mat
@@ -175,32 +183,45 @@ def plot_confusion_mat(confusion_mat):
 
 
 if __name__ == '__main__':
-	#  load image data
-	file_dir = 'data/train.csv'
+	"Load image data"
+	file_dir = train_data_path
 	x_train, y_train = load_image(file_dir, data_num = training_num, train_by_cnn = train_by_cnn)
 	training_num = y_train.shape[0]
 
 	# validation split
 	(x_train,y_train), (x_val,y_val) = validation_split(x_train,y_train)
 
-	# build traing model 
-	y_train_weight = sample_weight(y_train)
-	y_train_weight = None
-	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_by_cnn)
+	# class y_train y_val
+	y_val_class = np.argmax(y_val,axis = 1)
+	y_train_class = np.argmax(y_train,axis = 1)
 
-	# plot confusion matrix
+
+	"Build training model" 
+	# y_train_weight = sample_weight(y_train)
+	# y_train_weight = None
+	model = trianing_model(x_train, y_train, x_val, y_val, y_train_weight,train_opt)
+
+
+	"Evaluate accuracy"
+	y_val_predic = model.predict_classes(x_val)
+	y_train_predict = model.predict_classes(x_train)
+	train_acc = get_accuracy(y_true = y_train_class, y_predict = y_train_predict)
+	val_acc = get_accuracy(y_true = y_val_class, y_predict = y_val_predict)
+
+
 	if print_opt: 
-		y_val_class = np.argmax(y_val, axis = 1)
-		y_val_predict = model.predict_classes(x_val) 
-		cm = get_confusion_matrix(y_val_class,y_val_class)
-		print(cm)
+		print("\n\nAccuracy Evaluation")
+		print("Training accuracy: %4f", %train_acc)
+		print("Validation accuracy: %4f", %val_acc)
+
+	"Confusion matrix"
+	if print_opt:  
+		cm = get_confusion_matrix(y_true = y_val_class,y_predict = y_val_predic)
 		plot_confusion_mat(cm)
 
 
 
-	# save model in h5py
-	if write_model:
-		model.save('traing_cnn.h5') 
+
 
 
 
