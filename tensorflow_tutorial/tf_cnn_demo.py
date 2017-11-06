@@ -58,6 +58,9 @@ def build_dnn_layer(output_size,input,use_relu = True):
 	return dnn_output_layer
 
 def build_cnn_graph(x_train):
+	# reshape x_train
+	x_train = tf.reshape(x_train, shape = [-1, row_size, column_size, 1])
+	
 	# cnn graph
 	cnn_output_layer = new_conv2d_layer(filter_num=16,ker_size=3, input=x_train, use_pooling=True)
 	cnn_output_layer = new_conv2d_layer(filter_num=32, ker_size=3, input=cnn_output_layer, use_pooling=True)
@@ -81,8 +84,8 @@ def optimize_cnn_graph(data, x_train,y_train,y_pred):
 	accuracy = tf.reduce_mean(tf.cast(tf.equal(y_pred_cls,y_train_cls),tf.float32))
 	
 
-	with tf Session() as sess: 
-		see.run(tf.global_variables_initializer())
+	with tf.Session() as sess: 
+		sess.run(tf.global_variables_initializer())
 		
 		for iter in range(iter_number):
 			xt_batch,yt_batch = data.train.next_batch(batch_size)
@@ -114,7 +117,6 @@ if __name__ == '__main__':
 
 	"place holder"
 	x_train = tf.placeholder(tf.float32, shape=[None,flatten_size], name='Xtrain')
-	x_train = tf.reshape(x_train, shape = [-1, row_size, column_size, 1])
 	y_train = tf.placeholder(tf.float32, shape=[None,class_num], name='Ytrain')
 	
 	"build cnn graph"
