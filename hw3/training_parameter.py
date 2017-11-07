@@ -11,14 +11,14 @@ plot_opt = False
 
 # data path
 train_data_path = 'data/train.csv'
-model_path = 'model_cnn_1/'
+model_path = 'model_cnn_2/'
 
 # training parameter
 validation_ratio = 0.3
 train_opt = 'cnn'
 model_load = False
 activate_method = 'relu'
-training_num = 100 # max 28709
-batch_size = 10
-epoch_num = 2
+training_num = 28709 # max 28709
+batch_size = 32
+epoch_num = 50
 opt_method = Adadelta(lr = 1)

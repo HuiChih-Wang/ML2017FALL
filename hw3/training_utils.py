@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,7 +8,6 @@ from keras.utils import to_categorical
 
 def load_image():
 	train_file = pd.read_csv(train_data_path, nrows = training_num)
-
 	y_train = train_file['label'].as_matrix()
 	x_train_list = train_file['feature'].tolist()
 
@@ -67,6 +67,8 @@ def validation_split(x_train,y_train):
 	if model_load:
 		rand_idx = np.load(val_idx_file)
 	else:
+		if not os.path.exists(model_path):
+			os.makedirs(model_path)
 		rand_idx = np.random.permutation(training_num)
 		np.save(val_idx_file,rand_idx)
 
