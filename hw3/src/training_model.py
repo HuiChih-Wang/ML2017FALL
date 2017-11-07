@@ -6,6 +6,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.losses import categorical_crossentropy
 from keras.preprocessing.image import ImageDataGenerator
 from training_parameter import *
+from training_utils import class_weight
 
 def img_generate(train_img,label):
 	# initilize generator
@@ -76,7 +77,8 @@ def train_model(x_train, y_train, x_val, y_val,train_by_generator = False):
 		if train_by_generator:
 			# generate extra data
 			data_gen = img_generate(x_train,y_train)
-			model.fit_generator(data_gen,steps_per_epoch=training_num/batch_size,epochs = epoch_num,validation_data=(x_val,y_val),verbose = int(print_opt))
+			model.fit_generator(data_gen,steps_per_epoch=training_num/batch_size,epochs = epoch_num,class_weight = class_weight,
+								validation_data=(x_val,y_val),verbose = int(print_opt))
 		else:
 			model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
 

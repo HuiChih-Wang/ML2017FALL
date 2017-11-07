@@ -4,7 +4,7 @@ import pandas as pd
 #import matplotlib.pyplot as plt
 from training_parameter import *
 from keras.utils import to_categorical
-
+from sklearn.utils import compute_class_weight
 
 def load_image():
 	train_file = pd.read_csv(train_data_path, nrows = training_num)
@@ -49,18 +49,9 @@ def data_reshape(x_train_list,x_train_shape):
 		print('Invalid input to train deep learing model !\n')
 	return x_train
 
-def sample_weight(y_train):
-	y_train = np.argmax(y_train,axis = 1)
-	class_statistic = np.zeros((class_num,))
-	for i in range(y_train.shape[0]):
-		class_statistic[y_train[i]]+=1
-	class_weight = 1/class_statistic
-	class_weight = class_weight/np.sum(class_weight)
-	y_train_weight = np.empty(y_train.shape)
-	for i in range(y_train.shape[0]):
-		y_train_weight[i] = class_weight[y_train[i]]
-	return y_train_weight
-
+def class_weight(y_train):
+	class_weight = compute_class_weight('balanced',np.unique(y_train),y_train)
+	return class_weight
 
 def validation_split(x_train,y_train):
 	val_idx_file = model_path+'ValSplitIdx'

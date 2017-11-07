@@ -10,8 +10,8 @@ print_opt = True
 plot_opt = False
 
 # data path
-train_data_path = 'data/train.csv'
-model_path = 'model_cnn_2/'
+train_data_path = '../data/train.csv'
+model_path = '../model_cnn_2/'
 
 # training parameter
 validation_ratio = 0.3
