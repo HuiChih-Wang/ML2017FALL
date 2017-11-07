@@ -41,11 +41,13 @@ def new_conv2d_layer(filter_num, ker_size, input, use_pooling = True):
 	cnn_output_layer = tf.nn.relu(cnn_output_layer)
 	return cnn_output_layer
 
+
 def flatten_layer(input):
 	input_shape = input.get_shape()
 	flatten_size = input_shape[1:4].num_elements()
 	cnn_flayyen_layer = tf.reshape(input, [-1,flatten_size])
 	return cnn_flayyen_layer
+
 
 def build_dnn_layer(output_size,input,use_relu = True):
 	input_size = input.get_shape()[1].value
@@ -57,12 +59,13 @@ def build_dnn_layer(output_size,input,use_relu = True):
 		dnn_output_layer = tf.nn.relu(dnn_output_layer) 
 	return dnn_output_layer
 
+
 def build_cnn_graph(x_train):
 	# reshape x_train
 	x_train = tf.reshape(x_train, shape = [-1, row_size, column_size, 1])
-	
+
 	# cnn graph
-	cnn_output_layer = new_conv2d_layer(filter_num=16,ker_size=3, input=x_train, use_pooling=True)
+	cnn_output_layer = new_conv2d_layer(filter_num=16,ker_size=5, input=x_train, use_pooling=True)
 	cnn_output_layer = new_conv2d_layer(filter_num=32, ker_size=3, input=cnn_output_layer, use_pooling=True)
 
 	# flatten 
@@ -70,10 +73,13 @@ def build_cnn_graph(x_train):
 
 	# build fully connected layer
 	dnn_output_layer = build_dnn_layer(output_size = 128,input = cnn_flayyen_layer,use_relu = True)
+	dnn_output_layer = build_dnn_layer(output_size = 128,input = cnn_flayyen_layer,use_relu = True)
 	dnn_output_layer = build_dnn_layer(output_size = class_num,input = cnn_flayyen_layer,use_relu = False)
 	logit = tf.nn.softmax(dnn_output_layer)
-
 	return logit
+
+def get_accuracy(y_pred_cls,y_train_cls):
+	return tf.reduce_mean(tf.cast(tf.equal(y_pred_cls,y_train_cls),tf.float32))
 
 def optimize_cnn_graph(data, x_train,y_train,y_pred):
 	y_pred_cls = tf.argmax(y_pred,dimension = 1)
@@ -81,11 +87,10 @@ def optimize_cnn_graph(data, x_train,y_train,y_pred):
 	cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = y_pred, labels = y_train)
 	cost = tf.reduce_mean(cross_entropy)
 	optimizer = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(cost)
-	accuracy = tf.reduce_mean(tf.cast(tf.equal(y_pred_cls,y_train_cls),tf.float32))
-	
+	accuracy = get_accuracy(y_pred_cls,y_train_cls)
 
 	with tf.Session() as sess: 
-		sess.run(tf.global_variables_initializer())
+		sess.run(tf.initialize_all_variables())
 		
 		for iter in range(iter_number):
 			xt_batch,yt_batch = data.train.next_batch(batch_size)
@@ -98,8 +103,14 @@ def optimize_cnn_graph(data, x_train,y_train,y_pred):
 			if (iter+1)%5==0:
 				print('Loss at iter %d : %.4f\n' %(iter,loss))
 				print('Accuracy : %.4f\n' %acc)
+		
 
-
+		x_val = data.validation.images
+		y_val = data.validation.labels	
+		feed_dict = {x_train:x_val,y_train:y_val}
+		acc = sess.run(accuracy,feed_dict = feed_dict)
+		print(acc)
+	
 if __name__ == '__main__':
 	"Load data"
 	from tensorflow.examples.tutorials.mnist import input_data
@@ -124,3 +135,7 @@ if __name__ == '__main__':
 
 	"optimize on graph"
 	optimize_cnn_graph(data,x_train,y_train, y_pred)
+
+
+
+
