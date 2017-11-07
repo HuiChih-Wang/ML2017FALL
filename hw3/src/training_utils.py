@@ -50,6 +50,7 @@ def data_reshape(x_train_list,x_train_shape):
 	return x_train
 
 def class_weight(y_train):
+	y_train = np.argmax(y_train,axis=1)
 	class_weight = compute_class_weight('balanced',np.unique(y_train),y_train)
 	return class_weight
 

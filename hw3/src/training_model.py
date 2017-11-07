@@ -76,8 +76,9 @@ def train_model(x_train, y_train, x_val, y_val,train_by_generator = False):
 		model.compile(loss = categorical_crossentropy, optimizer = opt_method, metrics = ['accuracy'])
 		if train_by_generator:
 			# generate extra data
+			print(class_weight(y_train))
 			data_gen = img_generate(x_train,y_train)
-			model.fit_generator(data_gen,steps_per_epoch=training_num/batch_size,epochs = epoch_num,class_weight = class_weight,
+			model.fit_generator(data_gen,steps_per_epoch=training_num/batch_size,epochs = epoch_num,class_weight = class_weight(y_train),
 								validation_data=(x_val,y_val),verbose = int(print_opt))
 		else:
 			model.fit(x_train, y_train, batch_size = batch_size, epochs = epoch_num, validation_data = (x_val,y_val), verbose = int(print_opt))
