@@ -14,11 +14,15 @@ train_data_path = '../data/train.csv'
 model_path = '../model_cnn_2/'
 
 # training parameter
+training_num = 28709 # max 28709
 validation_ratio = 0.3
 train_opt = 'cnn'
 model_load = False
 activate_method = 'relu'
-training_num = 28709 # max 28709
-batch_size = 32
+
+
+drop_out_cnn = 0.15
+drop_out_dnn = 0.25
+batch_size = 64
 epoch_num = 50
 opt_method = Adadelta(lr = 1)

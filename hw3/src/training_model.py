@@ -22,18 +22,22 @@ def img_generate(train_img,label):
 
 def build_cnn(input_shape):
 	cnn_model = Sequential()
+	
 	cnn_model.add(Conv2D(32, (3,3), activation = activate_method, padding = 'same', input_shape = input_shape))
 	# cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	# cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dropout(drop_out_cnn))
+
 	cnn_model.add(Conv2D(64, (3,3), activation = activate_method, padding = 'same'))
 	# cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	# cnn_model.add(Dropout(0.25))
-	cnn_model.add(Conv2D(128, (3,3), activation = activate_method, padding = 'same'))
+	cnn_model.add(Dropout(drop_out_cnn))
+	
+	cnn_model.add(Conv2D(64, (3,3), activation = activate_method, padding = 'same'))
 	# cnn_model.add(BatchNormalization())
 	cnn_model.add(MaxPool2D(pool_size = (2,2)))
-	# cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dropout(drop_out_cnn))
+	
 	cnn_model.add(Conv2D(128, (1,1), activation = activate_method, padding = 'same'))
 	# cnn_model.add(BatchNormalization())
 	# cnn_model.add(MaxPool2D(pool_size = (2,2)))
@@ -41,12 +45,15 @@ def build_cnn(input_shape):
 
 	# flatten dense layer
 	cnn_model.add(Flatten())
+	
 	cnn_model.add(Dense(512, activation = 'relu'))
-	# cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dropout(drop_out_dnn))
+	
 	cnn_model.add(Dense(512, activation = 'relu'))
-	# cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dropout(drop_out_dnn))
+	
 	cnn_model.add(Dense(512, activation = 'relu'))
-	# cnn_model.add(Dropout(0.25))
+	cnn_model.add(Dropout(drop_out_dnn))
 	cnn_model.add(Dense(class_num, activation = 'softmax'))
 	return cnn_model
 
