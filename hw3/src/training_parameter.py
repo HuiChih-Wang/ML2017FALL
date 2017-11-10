@@ -24,5 +24,5 @@ activate_method = 'relu'
 drop_out_cnn = 0.15
 drop_out_dnn = 0.25
 batch_size = 64
-epoch_num = 50
+epoch_num = 200
 opt_method = Adadelta(lr = 1)

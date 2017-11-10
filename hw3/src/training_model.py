@@ -10,7 +10,7 @@ from training_utils import class_weight
 
 def img_generate(train_img,label):
 	# initilize generator
-	datagen = ImageDataGenerator(horizontal_flip = True,rotation_range = 30)
+	datagen = ImageDataGenerator(horizontal_flip = True,rotation_range = 30, zoom_range = 0.3)
 
 	# input train_img should has rank 4
 	datagen.fit(train_img)
